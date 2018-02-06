@@ -1,14 +1,4 @@
 ---
-vagrant: false
-
-# SSH
-ssh_port: 12322
-ssh_user: ssh_user
-ssh_password: null
-
-# Administrator
-administrator_email: admin@example.com
-
 # Apache VirtualHost
 apache_vhosts:
   - {
@@ -18,4 +8,5 @@ apache_vhosts:
     serveradmin: "root@localhost"
   }
 
+# MySQL
 mysql_root_pass: Passw0rd!
