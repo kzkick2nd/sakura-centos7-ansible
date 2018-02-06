@@ -11,9 +11,10 @@ Vagrant.configure(2) do |config|
   end
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "provision/vagrant.yml"
-    ansible.sudo = true
+    ansible.become = true
     ansible.verbose = "v"
     ansible.extra_vars = {vagrant: true}
-    ansible.raw_arguments = ['--check']
+    # DRYRUN確認用
+    # ansible.raw_arguments = ['--check']
   end
 end
