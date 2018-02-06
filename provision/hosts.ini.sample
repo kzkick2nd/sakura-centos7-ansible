@@ -1,0 +1,5 @@
+[init]
+sakura ansible_ssh_port=22
+
+[sakura]
+sakura ansible_ssh_port=12322

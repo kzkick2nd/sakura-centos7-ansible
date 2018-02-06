@@ -1,0 +1,6 @@
+.DS_Store
+.vagrant
+*.retry
+provision/hosts.ini
+provision/group_vars/*.yml
+provision/host_vars/*.yml

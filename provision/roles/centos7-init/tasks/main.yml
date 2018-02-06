@@ -1,0 +1,82 @@
+---
+
+# 初期化
+
+- name: Upgrade all
+  yum: name=* state=latest
+
+- name: Install fundamental libraries
+  yum: name={{ item }} state=present
+  with_items:
+    - policycoreutils-python
+
+- name: Install epel libs
+  yum: name={{ item }} state=present
+  with_items:
+    - ansible
+    - sshpass
+
+- name: Deprivation root login
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^#PermitRootLogin"
+    line: "PermitRootLogin no"
+    backrefs: yes
+  notify: restart sshd
+
+- name: Add ssh user
+  user: >
+    name={{ ssh_user }}
+    state=present
+    groups=wheel
+    password="{{ ssh_password }}"
+  notify: restart sshd
+
+- name: Set ssh user sudo no password(wheel group)
+  lineinfile:
+    dest: /etc/sudoers.d/wheel
+    create: yes
+    mode: 0440
+    line: '%wheel        ALL=(ALL)       NOPASSWD: ALL'
+    validate: 'visudo -cf %s'
+
+- name: Install yum-cron
+  yum: name=yum-cron state=latest
+
+- name: Enable auto update
+  lineinfile:
+    dest: /etc/yum/yum-cron.conf
+    backrefs: yes
+    regexp: "^apply_updates = no"
+    line: "apply_updates = yes"
+
+- name: Enable notify mail
+  lineinfile:
+    dest: /etc/yum/yum-cron.conf
+    backrefs: yes
+    regexp: "^email_to"
+    line: "email_to = {{ administrator_email }}"
+
+# Vagrantでは実行しない（環境変数 at Vagrantfile）
+- block:
+  - name: Enable new SSH port
+    firewalld: >
+      port={{ ssh_port }}/tcp
+      permanent=true
+      state=enabled
+  - name: Disable old SSH port
+    firewalld: >
+      service=ssh
+      permanent=true
+      state=disabled
+  - name: Stop firewalld before changing SSH port
+    service:
+      name: firewalld
+      state: stopped
+  - name: Change SSH port
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      backrefs: yes
+      regexp: "^#Port"
+      line: "Port {{ ssh_port }}"
+  when: vagrant != true

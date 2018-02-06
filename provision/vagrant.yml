@@ -1,0 +1,5 @@
+---
+- name: Apply configuration
+  hosts: default
+  roles:
+    - centos7-init

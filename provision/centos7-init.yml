@@ -1,0 +1,16 @@
+---
+# SSHポートの変更があるため、初回のみ実行
+- name: Apply initial configuration
+  hosts: init
+  remote_user: root
+
+  roles:
+    - centos7-init
+
+  vars_prompt:
+    - name: "ssh_password"
+      prompt: "Enter new ssh password!"
+      private: yes
+      default: "Passw0rd!"
+      encrypt: "sha512_crypt"
+      confirm: yes
