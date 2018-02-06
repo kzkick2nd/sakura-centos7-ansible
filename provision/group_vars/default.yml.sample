@@ -2,7 +2,6 @@
 # SSH
 ssh_port: 12322
 ssh_user: ssh_user
-ssh_password: null
 
 # Administrator
 administrator_email: admin@example.com
