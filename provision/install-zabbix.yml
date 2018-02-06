@@ -1,0 +1,9 @@
+---
+# SSHポートの変更があるため、初回のみ実行
+- name: Apply initial configuration
+  hosts: vps
+  remote_user: ssh_user
+  become: true
+
+  roles:
+    - zabbix

@@ -1,0 +1,97 @@
+---
+# require LAMP
+- name: Install zabbix 3.4.2 rpm
+  yum:
+    name: http://repo.zabbix.com/zabbix/3.4/rhel/7/x86_64/zabbix-release-3.4-2.el7.noarch.rpm
+    state: present
+
+- name: Install zabbix 3.4.2 packages
+  yum: name={{ item }} state=present
+  with_items:
+    - zabbix-server-mysql
+    - zabbix-web-mysql
+    - zabbix-web-japanese
+    - zabbix-agent
+
+- name: Configure php.ini
+  lineinfile:
+    dest: /etc/php.ini
+    backrefs: yes
+    regexp: '{{ item.regexp }}'
+    line: '{{ item.line }}'
+  with_items:
+    - regexp: '^max_execution_time ='
+      line: 'max_execution_time = 300'
+    - regexp: '^memory_limit ='
+      line: 'memory_limit = 128M'
+    - regexp: '^post_max_size ='
+      line: 'post_max_size = 16M'
+    - regexp: '^upload_max_filesize ='
+      line: 'upload_max_filesize = 2M'
+    - regexp: '^max_input_time ='
+      line: 'max_input_time = 300'
+    - regexp: '^always_populate_raw_post_data ='
+      line: 'always_populate_raw_post_data = -1'
+  notify: restart php-fpm
+
+# キー長に問題が出たのでmb4ではなくutf8で設定
+# ERROR 1071 (42000): Specified key was too long; max key length is 767 bytes
+- name: Create DB table
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_pass }}"
+    name: zabbix
+    encoding: utf8
+    collation: utf8_bin
+    state: present
+
+- name: Check zabbix table
+  shell: mysql -u root --password={{ mysql_root_pass }} zabbix -e "show tables;" | wc -l
+  register: checkZabbixTable
+
+# - debug: var=checkZabbixTable
+
+- name: Install DB data
+  shell: zcat /usr/share/doc/zabbix-server-mysql-3.4.6/create.sql.gz | mysql -u root --password={{ mysql_root_pass }} zabbix
+  when: checkZabbixTable.stdout == "0"
+
+- name: Install DB data
+  mysql_db:
+    login_user: root
+    login_password: "{{ mysql_root_pass }}"
+    name: zabbix
+    state: import
+    target: /usr/share/doc/zabbix-server-mysql-3.4.6/create.sql.gz
+  when: checkZabbixTable.stdout == "0"
+
+- name: Config DB password
+  lineinfile:
+    dest: /etc/zabbix/zabbix_server.conf
+    backrefs: yes
+    regexp: "^# DBPassword="
+    line: "DBPassword={{ mysql_root_pass }}"
+
+- name: Config DB user
+  lineinfile:
+    dest: /etc/zabbix/zabbix_server.conf
+    backrefs: yes
+    regexp: "^DBUser="
+    line: "DBUser=root"
+
+- name: Enable zabbix port
+  firewalld: port={{ item }} permanent=true state=enabled
+  with_items:
+    - 10050/tcp
+    - 10051/tcp
+
+- name: Start zabbix-server
+  service:
+    name: zabbix-server
+    state: restarted
+    enabled: yes
+
+- name: Start zabbix-agent
+  service:
+    name: zabbix-agent
+    state: restarted
+    enabled: yes
