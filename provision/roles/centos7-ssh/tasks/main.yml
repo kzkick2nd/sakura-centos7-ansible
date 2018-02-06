@@ -1,7 +1,5 @@
 ---
-
-# 初期化
-
+# SSHの初期化（初回のみ実行）
 - name: Upgrade all
   yum: name=* state=latest
 
@@ -41,39 +39,6 @@
     line: '%wheel        ALL=(ALL)       NOPASSWD: ALL'
     validate: 'visudo -cf %s'
 
-- name: Install yum-cron
-  yum: name=yum-cron state=latest
-
-- name: Enable auto update
-  lineinfile:
-    dest: /etc/yum/yum-cron.conf
-    backrefs: yes
-    regexp: "^apply_updates ="
-    line: "apply_updates = yes"
-  notify: restart yum-cron
-
-- name: Set emit_via
-  lineinfile:
-    dest: /etc/yum/yum-cron.conf
-    backrefs: yes
-    regexp: "^emit_via ="
-    line: "emit_via = stdio,email"
-  notify: restart yum-cron
-
-- name: Enable notify mail
-  lineinfile:
-    dest: /etc/yum/yum-cron.conf
-    backrefs: yes
-    regexp: "^email_to ="
-    line: "email_to = {{ administrator_email }}"
-  notify: restart yum-cron
-
-- name: Start yum-cron
-  service:
-    name: yum-cron
-    state: started
-    enabled: yes
-
 # Vagrantでは実行しない（環境変数 at Vagrantfile）
 - block:
   - name: Enable new SSH port
@@ -96,4 +61,4 @@
       backrefs: yes
       regexp: "^#Port"
       line: "Port {{ ssh_port }}"
-  when: vagrant != true
+  when: vagrant == false

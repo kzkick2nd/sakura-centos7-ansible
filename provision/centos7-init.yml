@@ -5,7 +5,7 @@
   remote_user: root
 
   roles:
-    - centos7-init
+    - centos7-ssh
 
   vars_prompt:
     - name: "ssh_password"
