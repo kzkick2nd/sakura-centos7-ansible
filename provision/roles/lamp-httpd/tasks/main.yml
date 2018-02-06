@@ -29,7 +29,7 @@
   user: name=apache append=yes groups="{{ ssh_user }}"
 
 - name: Create vhost directories
-  file: path=/var/www/html/{{ item.servername }} state=directory mode="775"
+  file: path=/var/www/html/{{ item.servername }} state=directory mode="775" owner={{ ssh_user }} group="apache"
   with_items: "{{ apache_vhosts }}"
 
 - name: Create vhost.conf file
