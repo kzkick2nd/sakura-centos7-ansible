@@ -1,0 +1,9 @@
+---
+- name: install tools
+  yum: name={{ item }} state=latest
+  with_items:
+    - vim
+    - tree
+    - tar
+    - zip
+    - unzip

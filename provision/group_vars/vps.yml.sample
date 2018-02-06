@@ -1,4 +1,6 @@
 ---
+vagrant: false
+
 # SSH
 ssh_port: 12322
 ssh_user: ssh_user

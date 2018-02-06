@@ -1,0 +1,36 @@
+---
+- name: Install PHP
+  yum: name={{ item }} state=present
+  with_items:
+    - php
+    - php-devel
+    - php-common
+    - php-mysql
+    - php-mysqlnd
+    - php-mcrypt
+    - php-mbstring
+    - php-pdo
+    - php-xml
+    - php-gd
+    - php-pear
+    - php-pecl-apc-devel
+    - php-fpm
+    - zlib-devel
+
+- name: Creates php.conf file(event MPM)
+  template: src=php.conf.j2 dest=/etc/httpd/conf.d/php.conf backup=yes
+  notify: restart httpd
+
+- name: Start php-fpm
+  service:
+    name: php-fpm
+    state: started
+    enabled: yes
+  notify: restart httpd
+
+- name: Set Asia/Tokyo to date.timezone on php.ini
+  lineinfile:
+    dest: /etc/php.ini
+    backrefs: yes
+    regexp: '^;date.timezone ='
+    line: 'date.timezone = Asia/Tokyo'

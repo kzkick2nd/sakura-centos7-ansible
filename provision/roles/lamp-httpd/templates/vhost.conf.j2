@@ -1,0 +1,38 @@
+# {{ ansible_managed }}
+# 未定義ホスト名へのアクセス禁止
+<VirtualHost *:80>
+  ServerName any
+  <Location />
+    Require all denied
+  </Location>
+</VirtualHost>
+
+# vhostの設定
+{% for vhost in apache_vhosts %}
+<VirtualHost *:80>
+  ServerName {{ vhost.servername }}
+  DocumentRoot {{ vhost.documentroot }}
+  ServerAlias {{ vhost.serveralias }}
+  ErrorLog logs/{{ vhost.servername }}-error_log
+  CustomLog logs/{{ vhost.servername }}-access_log common
+{% if vhost.serveradmin is defined %}
+  ServerAdmin {{ vhost.serveradmin }}
+{% endif %}
+  <Directory "{{ vhost.documentroot }}">
+    AddDefaultCharset utf-8
+    AllowOverride All
+    Options FollowSymLinks
+    Require all granted
+  </Directory>
+  <Files ~ "^\.">
+    Require all denied
+  </Files>
+  <Files ~ ".*conf.*">
+    Require all denied
+  </Files>
+  <Files ~ "(\.tmpl|\.tpl|\.vm|\.mayaa|\.properties|\.back|\.bk|~|build.xml)$">
+    Require all denied
+  </Files>
+</VirtualHost>
+
+{% endfor %}

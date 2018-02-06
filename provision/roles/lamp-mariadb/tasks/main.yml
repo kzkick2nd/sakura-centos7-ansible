@@ -1,0 +1,99 @@
+---
+- name: Install MariaDB
+  yum: name={{ item }} state=present
+  with_items:
+    - mariadb
+    - mariadb-devel
+    - mariadb-server
+    - MySQL-python
+
+- name: Configure mariadb 5.5(server)
+  template:
+    src: server.5.5.cnf.j2
+    dest: /etc/my.cnf.d/server.cnf
+    backup: yes
+
+- name: Configure mariadb 5.5(client)
+  template:
+    src: client.5.5.cnf.j2
+    dest: /etc/my.cnf.d/client.cnf
+    backup: yes
+
+- name: Configure mariadb 5.5(mysql-client)
+  template:
+    src: mysql-clients.5.5.cnf.j2
+    dest: /etc/my.cnf.d/mysql-clients.cnf
+    backup: yes
+
+- name: Retart mariadb
+  service:
+    name: mariadb
+    state: restarted
+    enabled: yes
+
+# DB初期化
+- name: Login to mysql with no password?
+  mysql_user: >
+    login_user=root
+    login_password=
+    name=''
+    connect_timeout=10
+  register: mysql_login_nopass
+  ignore_errors: True
+
+# 初期化済みの際に実行
+- block:
+  - name: Remove anonymous users for DB
+    mysql_user: >
+      login_user=root
+      login_password={{ mysql_root_pass }}
+      name=''
+      state=absent
+      host_all=yes
+
+  - name: Remove test database
+    mysql_db: >
+      login_user=root
+      login_password={{ mysql_root_pass }}
+      name=test state=absent
+
+  - name: Add root password for DB
+    mysql_user: >
+      login_user=root
+      login_password={{ mysql_root_pass }}
+      name='root'
+      state=present
+      password={{ mysql_root_pass }}
+      priv=*.*:ALL,GRANT
+      host_all=yes
+
+  when: mysql_login_nopass|failed
+
+# nopass時（初期化）
+- block:
+  - name: Remove anonymous users for DB(init)
+    mysql_user: >
+      login_user=root
+      login_password=""
+      name=''
+      state=absent
+      host_all=yes
+
+  - name: Remove test database(init)
+    mysql_db: >
+      login_user=root
+      login_password=""
+      name=test
+      state=absent
+
+  - name: Add root password for DB(init)
+    mysql_user: >
+      login_user=root
+      login_password=""
+      name='root'
+      state=present
+      password={{ mysql_root_pass }}
+      priv=*.*:ALL,GRANT
+      host_all=yes
+
+  when: mysql_login_nopass|success

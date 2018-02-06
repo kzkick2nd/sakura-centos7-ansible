@@ -1,0 +1,43 @@
+---
+- name: Enable http,https,smtp port
+  firewalld: service={{ item }} permanent=true state=enabled
+  with_items:
+    - http
+    - https
+    - smtp
+  notify: restart firewalld
+
+- name: Change Tuned
+  shell: bash -lc "tuned-adm profile throughput-performance"
+
+- name: Install httpd
+  yum: name={{ item }} state=present
+  with_items:
+    - httpd
+    - httpd-devel
+
+- name: Creates httpd.conf file(gzip, event MPM)
+  template: src=httpd.conf.j2 dest=/etc/httpd/conf/httpd.conf backup=yes
+
+- name: Creates 00-mpm.conf file(event MPM)
+  template: src=00-mpm.conf.j2 dest=/etc/httpd/conf.modules.d/00-mpm.conf backup=yes
+
+- name: Add user ssh_user to Apache group
+  user: name={{ ssh_user }} append=yes groups="apache"
+
+- name: Add user Apache to ssh_user group
+  user: name=apache append=yes groups="{{ ssh_user }}"
+
+- name: Create vhost directories
+  file: path=/var/www/html/{{ item.servername }} state=directory mode="775"
+  with_items: "{{ apache_vhosts }}"
+
+- name: Create vhost.conf file
+  template: src=vhost.conf.j2 dest=/etc/httpd/conf.d/vhost.conf
+  notify: restart httpd
+
+- name: Start httpd
+  service:
+    name: httpd
+    state: started
+    enabled: yes

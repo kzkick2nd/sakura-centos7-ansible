@@ -2,4 +2,9 @@
 - name: Apply configuration
   hosts: default
   roles:
-    - centos7-init
+    - centos7-ssh
+    - centos7-yumcron
+    - centos7-tools
+    - centos7-httpd
+    - centos7-php
+    - centos7-mariadb
